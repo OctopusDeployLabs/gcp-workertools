@@ -1,7 +1,7 @@
 FROM octopuslabs/workertools:latest-ubuntu.2004
 
 ARG DEBIAN_FRONTEND noninteractive
-ARG Google_Cloud_Cli_Version=362.0.0
+ARG Google_Cloud_Cli_Version=362.0.0-0
 
 # Get Terraform
 # https://computingforgeeks.com/how-to-install-terraform-on-ubuntu-centos-7/
