@@ -1,0 +1,184 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ main ]
+  schedule:
+    - cron: '0 5 * * *'
+
+jobs:
+
+  get-version-number:
+    runs-on: windows-latest
+    outputs:
+      VERSION: ${{ steps.step1.outputs.VERSION }}
+      CONTINUE: ${{ steps.step1.outputs.Continue }}
+    steps:    
+    - uses: actions/checkout@v2
+    - id: step1
+      name: Compare latest version with container
+      run: |
+        $googleCloudSdkInfo = Invoke-RestMethod "https://registry.hub.docker.com/v2/repositories/google/cloud-sdk/tags?page=1"
+        $otherImages = $googleCloudSdkInfo.results | Where-Object { $_.name -ine "latest" }
+        $latestTag = $googleCloudSdkInfo.results | Where-Object { $_.name -ieq "latest" }
+        
+        if($null -eq $latestTag)  {
+            throw "Couldnt find latest tag for Google Cloud SDK version from DockerHub"
+        }
+        
+        $latestTagImage = $latestTag.images | Where-Object {$_.os -ieq "linux" -and $_.architecture -ieq "amd64" -and $_.status -ieq "active"} | Select-Object -First 1
+        if($null -eq $latestTagImage)  {
+            throw "Couldnt find latest tag image for Google Cloud SDK version for linux/amd64"
+        }
+        $latestDigest = $latestTagImage.digest
+        Write-Output "Found latest digest: $latestDigest"
+
+        $versionToCompare = ""
+        foreach($result in $otherImages) {
+            $matchingImageDigest = $result.images | Where-Object {$_.os -ieq "linux" -and $_.architecture -ieq "amd64" -and $_.status -ieq "active" -and $_.digest -ieq $latestDigest } | Select-Object -First 1
+            if($null -eq $matchingImageDigest) {
+                continue;
+            }
+            else {
+                $version = $result.name
+                Write-Output "Found version '$version' that matches digest: $latestDigest"
+                $versionSplit = $version.Split(".")
+                $versionToCompare = "$($versionSplit[0]).$($versionSplit[1]).$($versionSplit[2])"
+                break;
+            }
+        }
+
+        if ([string]::IsNullOrWhiteSpace($versionToCompare)) {
+            throw "No version with digest $latestDigest found"
+        }
+
+        $workerToolsTags = Invoke-RestMethod "https://registry.hub.docker.com/v1/repositories/octopuslabs/gcp-workertools/tags"
+        $matchingTag = $workerToolsTags | Where-Object { $_.name -eq $versionToCompare }
+
+        echo "::set-output name=VERSION::$versionToCompare"
+
+        if ($null -ne $matchingTag)
+        {
+            Write-Output "Docker container already has latest version"
+            echo "::set-output name=Continue::No"
+        }
+        else
+        {
+            Write-Output "We need to upgrade the container to $versionToCompare"            
+            echo "::set-output name=Continue::Yes"
+        }      
+      shell: powershell
+
+  build-linux:
+    needs: [get-version-number]
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2    
+    
+    - name: DockerHub Login
+      env:
+        USERNAME: ${{ secrets.DOCKER_HUB_USER }}
+        PASSWORD: ${{ secrets.DOCKER_HUB_PAT }}
+      run: docker login --username $USERNAME --password "$PASSWORD"
+    
+    - name: Build the ubuntu.1804 Docker image 
+      env:
+        VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
+        GCLOUD_CLI_VERSION: ${{ needs.get-version-number.outputs.VERSION }}-0
+      run: docker build ./ubuntu-1804 --build-arg Google_Cloud_Cli_Version=$GCLOUD_CLI_VERSION --tag octopuslabs/gcp-workertools:$VERSION_NUMBER-ubuntu.1804 --tag octopuslabs/gcp-workertools:latest-ubuntu.1804
+      if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
+      
+    - name: Push the ubuntu.1804 version image
+      env:
+        VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
+      run: docker push octopuslabs/gcp-workertools:$VERSION_NUMBER-ubuntu.1804
+      if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
+      
+    - name: Push the ubuntu.1804 latest image
+      env:
+        VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
+      run: docker push octopuslabs/gcp-workertools:latest-ubuntu.1804
+      if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
+
+    - name: Build the ubuntu.2004 Docker image      
+      env:
+        VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
+        GCLOUD_CLI_VERSION: ${{ needs.get-version-number.outputs.VERSION }}-0
+      run: docker build ./ubuntu-2004 --build-arg Google_Cloud_Cli_Version=$GCLOUD_CLI_VERSION --tag octopuslabs/gcp-workertools:$VERSION_NUMBER-ubuntu.2004 --tag octopuslabs/gcp-workertools:latest-ubuntu.2004
+      if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
+      
+    - name: Push the ubuntu.2004 version image
+      env:
+        VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
+      run: docker push octopuslabs/gcp-workertools:$VERSION_NUMBER-ubuntu.2004
+      if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
+      
+    - name: Push the ubuntu.2004 latest image
+      env:
+        VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
+      run: docker push octopuslabs/gcp-workertools:latest-ubuntu.2004
+      if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
+      
+  build-windows:
+    needs: [get-version-number]
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+        
+    - name: DockerHub Login
+      env:
+        USERNAME: ${{ secrets.DOCKER_HUB_USER }}
+        PASSWORD: ${{ secrets.DOCKER_HUB_PAT }}
+      run: docker login --username ${env:USERNAME} --password "${env:PASSWORD}"
+    
+    - name: Build the windows.2019 Docker image
+      env:
+        VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}
+        GCLOUD_CLI_VERSION: ${{ needs.get-version-number.outputs.VERSION }}     
+      run: docker build ./windows-2019 --build-arg Google_Cloud_Cli_Version=$GCLOUD_CLI_VERSION --tag octopuslabs/gcp-workertools:${env:VERSION_NUMBER}-windows.2019 --tag octopuslabs/gcp-workertools:latest-windows.2019
+      if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
+      
+    - name: Push the windows.2019 version image
+      env:
+        VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
+      run: docker push octopuslabs/gcp-workertools:${env:VERSION_NUMBER}-windows.2019
+      if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
+      
+    - name: Push the windows.2019 latest image
+      env:
+        VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
+      run: docker push octopuslabs/gcp-workertools:latest-windows.2019
+      if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
+  
+  build-docker-manifest:
+    needs: [build-windows, build-linux, get-version-number]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: DockerHub Login
+      env:
+        USERNAME: ${{ secrets.DOCKER_HUB_USER }}
+        PASSWORD: ${{ secrets.DOCKER_HUB_PAT }}
+      run: docker login --username $USERNAME --password "$PASSWORD"
+      
+    - name: Build latest version Manifest
+      run: docker manifest create octopuslabs/gcp-workertools:latest octopuslabs/gcp-workertools:latest-windows.2019 octopuslabs/gcp-workertools:latest-ubuntu.2004
+      if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
+      
+    - name: Push latest version Manifest
+      run: docker manifest push octopuslabs/gcp-workertools:latest
+      if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
+      
+    - name: Build specific version Manifest
+      env:
+        VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
+      run: docker manifest create octopuslabs/gcp-workertools:$VERSION_NUMBER octopuslabs/gcp-workertools:$VERSION_NUMBER-windows.2019 octopuslabs/gcp-workertools:$VERSION_NUMBER-ubuntu.2004
+      if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
+      
+    - name: Push specific version Manifest
+      env:
+        VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
+      run: docker manifest push octopuslabs/gcp-workertools:$VERSION_NUMBER
+      if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
