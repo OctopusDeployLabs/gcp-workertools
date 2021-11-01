@@ -86,7 +86,7 @@ jobs:
       env:
         VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}
         GOOGLE_CLOUD_CLI_VERSION: ${{ needs.get-version-number.outputs.VERSION }}     
-      run: docker build ./windows-2019 --build-arg GOOGLE_CLOUD_CLI_VERSION=$GOOGLE_CLOUD_CLI_VERSION --tag octopuslabs/gcp-workertools:${env:VERSION_NUMBER}-windows.2019 --tag octopuslabs/gcp-workertools:latest-windows.2019
+      run: docker build ./windows-2019 --build-arg GOOGLE_CLOUD_CLI_VERSION=${env:GOOGLE_CLOUD_CLI_VERSION} --tag octopuslabs/gcp-workertools:${env:VERSION_NUMBER}-windows.2019 --tag octopuslabs/gcp-workertools:latest-windows.2019
       if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
       
     - name: Push the windows.2019 version image
