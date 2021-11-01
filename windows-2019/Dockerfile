@@ -8,9 +8,9 @@ ARG GOOGLE_CLOUD_CLI_VERSION=362.0.0
 # Install Terraform
 RUN choco install terraform -y --no-progress
 
-# # Install gcloud
+# Install gcloud
 RUN $GCLOUD_VERSION = ${env:GOOGLE_CLOUD_CLI_VERSION} `
-    Write-Output "GOOGLE_CLOUD_CLI_VERSION: " + ${env:GOOGLE_CLOUD_CLI_VERSION}`
+    Write-Output "GOOGLE_CLOUD_CLI_VERSION: " + ${env:GOOGLE_CLOUD_CLI_VERSION} `
     Write-Output "GCLOUD_VERSION: $GCLOUD_VERSION" `
     $GOOGLE_CLOUD_DOWNLOAD_URI = "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-$($GCLOUD_VERSION)-windows-x86_64.zip" `
     Write-Output "GOOGLE_CLOUD_DOWNLOAD_URI: $GOOGLE_CLOUD_DOWNLOAD_URI" `

@@ -102,7 +102,7 @@ jobs:
       if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
 
   build-linux:
-    needs: [get-version-number]
+    needs: [get-version-number, build-windows]
     runs-on: ubuntu-latest
 
     steps:
