@@ -69,6 +69,38 @@ jobs:
         }      
       shell: powershell
 
+  build-windows:
+    needs: [get-version-number]
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+        
+    - name: DockerHub Login
+      env:
+        USERNAME: ${{ secrets.DOCKER_HUB_USER }}
+        PASSWORD: ${{ secrets.DOCKER_HUB_PAT }}
+      run: docker login --username ${env:USERNAME} --password "${env:PASSWORD}"
+    
+    - name: Build the windows.2019 Docker image
+      env:
+        VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}
+        GOOGLE_CLOUD_CLI_VERSION: ${{ needs.get-version-number.outputs.VERSION }}     
+      run: docker build ./windows-2019 --build-arg GOOGLE_CLOUD_CLI_VERSION=$GOOGLE_CLOUD_CLI_VERSION --tag octopuslabs/gcp-workertools:${env:VERSION_NUMBER}-windows.2019 --tag octopuslabs/gcp-workertools:latest-windows.2019
+      if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
+      
+    - name: Push the windows.2019 version image
+      env:
+        VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
+      run: docker push octopuslabs/gcp-workertools:${env:VERSION_NUMBER}-windows.2019
+      if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
+      
+    - name: Push the windows.2019 latest image
+      env:
+        VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
+      run: docker push octopuslabs/gcp-workertools:latest-windows.2019
+      if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
+
   build-linux:
     needs: [get-version-number]
     runs-on: ubuntu-latest
@@ -85,8 +117,8 @@ jobs:
     - name: Build the ubuntu.1804 Docker image 
       env:
         VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
-        GCLOUD_CLI_VERSION: ${{ needs.get-version-number.outputs.VERSION }}-0
-      run: docker build ./ubuntu-1804 --build-arg Google_Cloud_Cli_Version=$GCLOUD_CLI_VERSION --tag octopuslabs/gcp-workertools:$VERSION_NUMBER-ubuntu.1804 --tag octopuslabs/gcp-workertools:latest-ubuntu.1804
+        GOOGLE_CLOUD_CLI_VERSION: ${{ needs.get-version-number.outputs.VERSION }}-0
+      run: docker build ./ubuntu-1804 --build-arg GOOGLE_CLOUD_CLI_VERSION=$GOOGLE_CLOUD_CLI_VERSION --tag octopuslabs/gcp-workertools:$VERSION_NUMBER-ubuntu.1804 --tag octopuslabs/gcp-workertools:latest-ubuntu.1804
       if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
       
     - name: Push the ubuntu.1804 version image
@@ -104,8 +136,8 @@ jobs:
     - name: Build the ubuntu.2004 Docker image      
       env:
         VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
-        GCLOUD_CLI_VERSION: ${{ needs.get-version-number.outputs.VERSION }}-0
-      run: docker build ./ubuntu-2004 --build-arg Google_Cloud_Cli_Version=$GCLOUD_CLI_VERSION --tag octopuslabs/gcp-workertools:$VERSION_NUMBER-ubuntu.2004 --tag octopuslabs/gcp-workertools:latest-ubuntu.2004
+        GOOGLE_CLOUD_CLI_VERSION: ${{ needs.get-version-number.outputs.VERSION }}-0
+      run: docker build ./ubuntu-2004 --build-arg GOOGLE_CLOUD_CLI_VERSION=$GOOGLE_CLOUD_CLI_VERSION --tag octopuslabs/gcp-workertools:$VERSION_NUMBER-ubuntu.2004 --tag octopuslabs/gcp-workertools:latest-ubuntu.2004
       if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
       
     - name: Push the ubuntu.2004 version image
@@ -118,38 +150,6 @@ jobs:
       env:
         VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
       run: docker push octopuslabs/gcp-workertools:latest-ubuntu.2004
-      if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
-      
-  build-windows:
-    needs: [get-version-number]
-    runs-on: windows-latest
-
-    steps:
-    - uses: actions/checkout@v2
-        
-    - name: DockerHub Login
-      env:
-        USERNAME: ${{ secrets.DOCKER_HUB_USER }}
-        PASSWORD: ${{ secrets.DOCKER_HUB_PAT }}
-      run: docker login --username ${env:USERNAME} --password "${env:PASSWORD}"
-    
-    - name: Build the windows.2019 Docker image
-      env:
-        VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}
-        GCLOUD_CLI_VERSION: ${{ needs.get-version-number.outputs.VERSION }}     
-      run: docker build ./windows-2019 --build-arg Google_Cloud_Cli_Version=$GCLOUD_CLI_VERSION --tag octopuslabs/gcp-workertools:${env:VERSION_NUMBER}-windows.2019 --tag octopuslabs/gcp-workertools:latest-windows.2019
-      if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
-      
-    - name: Push the windows.2019 version image
-      env:
-        VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
-      run: docker push octopuslabs/gcp-workertools:${env:VERSION_NUMBER}-windows.2019
-      if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
-      
-    - name: Push the windows.2019 latest image
-      env:
-        VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
-      run: docker push octopuslabs/gcp-workertools:latest-windows.2019
       if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
   
   build-docker-manifest:
