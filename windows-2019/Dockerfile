@@ -13,7 +13,7 @@ RUN choco install terraform -y --no-progress
 RUN choco install 7zip -y --version $Env:7Zip_Version --no-progress
 
 # # Install gcloud
-RUN Invoke-WebRequest "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-$Env:Google_Cloud_Cli_Version-windows-x86_64.zip" -OutFile google-cloud-sdk-$Env:Google_Cloud_Cli_Version-windows-x86_64.zip; `
+RUN Invoke-WebRequest "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-$($Env:Google_Cloud_Cli_Version)-windows-x86_64.zip" -OutFile google-cloud-sdk-$Env:Google_Cloud_Cli_Version-windows-x86_64.zip; `
     # # UNZIP AND INSTALL gcloud
     & '.\Program Files\7-Zip\7z.exe' x .\google-cloud-sdk-$Env:Google_Cloud_Cli_Version-windows-x86_64.zip; `
     .\google-cloud-sdk\install.bat --quiet; `
