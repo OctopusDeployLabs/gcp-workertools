@@ -4,13 +4,14 @@ FROM octopuslabs/workertools:latest-windows.2019
 SHELL ["powershell", "-Command"]
 
 ARG GOOGLE_CLOUD_CLI_VERSION=362.0.0
+# Python Greater than 3.9 will not work with Google Cloud SDK - https://github.com/googleapis/google-auth-library-python/issues/418
 ARG PYTHON_VERSION=3.8.5
 
 # Install Terraform
 RUN choco install terraform -y --no-progress
 
 # Install python
-RUN choco install -y python3 --version $Env:PYTHON_VERSION --no-progress; `
+RUN choco install -y python3 --version $Env:PYTHON_VERSION --allow-downgrade --force --no-progress; `
     refreshenv
 
 # Install gcloud
