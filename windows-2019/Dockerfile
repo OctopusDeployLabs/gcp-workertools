@@ -36,3 +36,12 @@ RUN $GCLOUD_VERSION = $env:GOOGLE_CLOUD_CLI_VERSION; `
     & '.\Program Files\7-Zip\7z.exe' x .\google-cloud-sdk-$env:GOOGLE_CLOUD_CLI_VERSION-windows-x86_64.zip; `
     .\google-cloud-sdk\install.bat --quiet; `
     rm .\google-cloud-sdk-$env:GOOGLE_CLOUD_CLI_VERSION-windows-x86_64.zip
+
+# Update Path
+RUN $old = (Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name path).path; `
+    Write-Host $old; `
+    $gcloudPath = ';C:\google-cloud-sdk\bin'; `    
+    $new = $old + $gcloudPath; `
+    Write-Host $new; `
+    Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name path -Value $new; `
+    refreshenv
