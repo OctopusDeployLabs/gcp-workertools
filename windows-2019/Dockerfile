@@ -1,18 +1,32 @@
 # escape=`
 
-FROM octopuslabs/workertools:latest-windows.2019
+FROM mcr.microsoft.com/windows/servercore:ltsc2019
 SHELL ["powershell", "-Command"]
 
 ARG GOOGLE_CLOUD_CLI_VERSION=362.0.0
-# Python Greater than 3.9 will not work with Google Cloud SDK - https://github.com/googleapis/google-auth-library-python/issues/418
+
+# Python Greater than 3.9 will not work with Google Cloud SDK 
+# https://github.com/googleapis/google-auth-library-python/issues/418
 ARG PYTHON_VERSION=3.8.5
+
+# Install Choco
+RUN $ProgressPreference = 'SilentlyContinue'; `
+    Set-ExecutionPolicy Bypass -Scope Process -Force; `
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; `
+    iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+
+# Install 7ZIP
+RUN choco install 7zip -y --no-progress
+
+# Install Powershell Core
+RUN choco install powershell-core -y --no-progress
+
+# Install python
+RUN choco install -y python3 --version $env:PYTHON_VERSION --no-progress; `
+    refreshenv
 
 # Install Terraform
 RUN choco install terraform -y --no-progress
-
-# Install python
-RUN choco install -y python3 --version $Env:PYTHON_VERSION --allow-downgrade --force --no-progress; `
-    refreshenv
 
 # Install gcloud
 RUN $GCLOUD_VERSION = $env:GOOGLE_CLOUD_CLI_VERSION; `
