@@ -8,6 +8,10 @@ ARG GOOGLE_CLOUD_CLI_VERSION=362.0.0
 # Install Terraform
 RUN choco install terraform -y --no-progress
 
+# Install python
+RUN choco install -y python3 --version $Env:Python_Version --no-progress; `
+    refreshenv
+
 # Install gcloud
 RUN $GCLOUD_VERSION = $env:GOOGLE_CLOUD_CLI_VERSION; `
     Write-Host "GCLOUD_VERSION: ${env:GOOGLE_CLOUD_CLI_VERSION}"; `
