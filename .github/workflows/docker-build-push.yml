@@ -70,7 +70,7 @@ jobs:
         }      
       shell: powershell
 
-  build-windows-2019:
+  build-win-2019:
     needs: [get-version-number]
     runs-on: windows-2019
 
@@ -83,26 +83,26 @@ jobs:
         PASSWORD: ${{ secrets.DOCKER_HUB_PAT }}
       run: docker login --username ${env:USERNAME} --password "${env:PASSWORD}"
     
-    - name: Build the windows.2019 Docker image
+    - name: Build the win2019 Docker image
       env:
         VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}
         GOOGLE_CLOUD_CLI_VERSION: ${{ needs.get-version-number.outputs.VERSION }}     
       run: docker build ./windows-2019 --build-arg GOOGLE_CLOUD_CLI_VERSION=${env:GOOGLE_CLOUD_CLI_VERSION} --tag octopuslabs/gcp-workertools:${env:VERSION_NUMBER}-windows.2019 --tag octopuslabs/gcp-workertools:latest-windows.2019
       if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
       
-    - name: Push the windows.2019 version image
+    - name: Push the win2019 version image
       env:
         VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
       run: docker push octopuslabs/gcp-workertools:${env:VERSION_NUMBER}-windows.2019
       if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
       
-    - name: Push the windows.2019 latest image
+    - name: Push the win2019 latest image
       env:
         VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
       run: docker push octopuslabs/gcp-workertools:latest-windows.2019
       if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
 
-  build-linux:
+  build-ubuntu:
     needs: [get-version-number]
     runs-on: ubuntu-latest
 
@@ -115,26 +115,7 @@ jobs:
         PASSWORD: ${{ secrets.DOCKER_HUB_PAT }}
       run: docker login --username $USERNAME --password "$PASSWORD"
     
-    - name: Build the ubuntu.1804 Docker image 
-      env:
-        VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
-        GOOGLE_CLOUD_CLI_VERSION: ${{ needs.get-version-number.outputs.VERSION }}-0
-      run: docker build ./ubuntu-1804 --build-arg GOOGLE_CLOUD_CLI_VERSION=$GOOGLE_CLOUD_CLI_VERSION --tag octopuslabs/gcp-workertools:$VERSION_NUMBER-ubuntu.1804 --tag octopuslabs/gcp-workertools:latest-ubuntu.1804
-      if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
-      
-    - name: Push the ubuntu.1804 version image
-      env:
-        VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
-      run: docker push octopuslabs/gcp-workertools:$VERSION_NUMBER-ubuntu.1804
-      if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
-      
-    - name: Push the ubuntu.1804 latest image
-      env:
-        VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
-      run: docker push octopuslabs/gcp-workertools:latest-ubuntu.1804
-      if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
-
-    - name: Build the ubuntu.2004 Docker image      
+    - name: Build the ubuntu.2004 Docker image 
       env:
         VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
         GOOGLE_CLOUD_CLI_VERSION: ${{ needs.get-version-number.outputs.VERSION }}-0
@@ -147,14 +128,33 @@ jobs:
       run: docker push octopuslabs/gcp-workertools:$VERSION_NUMBER-ubuntu.2004
       if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
       
-    - name: Push the ubuntu.2004 latest image
+    - name: Push the latest ubuntu.2004 image
       env:
         VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
       run: docker push octopuslabs/gcp-workertools:latest-ubuntu.2004
       if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
+
+    - name: Build the ubuntu.2204 Docker image      
+      env:
+        VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
+        GOOGLE_CLOUD_CLI_VERSION: ${{ needs.get-version-number.outputs.VERSION }}-0
+      run: docker build ./ubuntu-2204 --build-arg GOOGLE_CLOUD_CLI_VERSION=$GOOGLE_CLOUD_CLI_VERSION --tag octopuslabs/gcp-workertools:$VERSION_NUMBER-ubuntu.2204 --tag octopuslabs/gcp-workertools:latest-ubuntu.2204
+      if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
+      
+    - name: Push the ubuntu.2204 version image
+      env:
+        VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
+      run: docker push octopuslabs/gcp-workertools:$VERSION_NUMBER-ubuntu.2204
+      if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
+      
+    - name: Push the latest ubuntu.2204 image
+      env:
+        VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
+      run: docker push octopuslabs/gcp-workertools:latest-ubuntu.2204
+      if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
   
   build-docker-manifest:
-    needs: [build-windows-2019, build-linux, get-version-number]
+    needs: [get-version-number, build-ubuntu, build-win-2019]
     runs-on: ubuntu-latest
     
     steps:
@@ -165,7 +165,7 @@ jobs:
       run: docker login --username $USERNAME --password "$PASSWORD"
       
     - name: Build latest version Manifest
-      run: docker manifest create octopuslabs/gcp-workertools:latest octopuslabs/gcp-workertools:latest-windows.2019 octopuslabs/gcp-workertools:latest-ubuntu.1804
+      run: docker manifest create octopuslabs/gcp-workertools:latest octopuslabs/gcp-workertools:latest-windows.2019 octopuslabs/gcp-workertools:latest-ubuntu.2004
       if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
       
     - name: Push latest version Manifest
@@ -175,7 +175,7 @@ jobs:
     - name: Build specific version Manifest
       env:
         VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
-      run: docker manifest create octopuslabs/gcp-workertools:$VERSION_NUMBER octopuslabs/gcp-workertools:$VERSION_NUMBER-windows.2019 octopuslabs/gcp-workertools:$VERSION_NUMBER-ubuntu.1804
+      run: docker manifest create octopuslabs/gcp-workertools:$VERSION_NUMBER octopuslabs/gcp-workertools:$VERSION_NUMBER-windows.2019 octopuslabs/gcp-workertools:$VERSION_NUMBER-ubuntu.2004
       if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
       
     - name: Push specific version Manifest
