@@ -9,23 +9,6 @@ ARG GOOGLE_CLOUD_CLI_VERSION=433.0.0
 # https://github.com/googleapis/google-auth-library-python/issues/418
 ARG PYTHON_VERSION=3.8.5
 
-# Install Choco
-RUN $ProgressPreference = 'SilentlyContinue'; `
-    Set-ExecutionPolicy Bypass -Scope Process -Force; `
-    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; `
-    iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
-
-# Install 7ZIP
-RUN choco install 7zip -y --no-progress
-
-# Install Powershell Core
-RUN choco install powershell-core -y --no-progress
-
-# Install python
-RUN choco install -y python3 --version $env:PYTHON_VERSION --no-progress; `
-    Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1; `
-    refreshenv
-
 # Install Terraform
 RUN choco install terraform -y --no-progress
 
