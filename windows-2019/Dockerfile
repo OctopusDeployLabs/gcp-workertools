@@ -1,9 +1,9 @@
 # escape=`
 
-FROM mcr.microsoft.com/windows/servercore:ltsc2019
+FROM octopuslabs/workertools:latest-windows.2019
 SHELL ["powershell", "-Command"]
 
-ARG GOOGLE_CLOUD_CLI_VERSION=362.0.0
+ARG GOOGLE_CLOUD_CLI_VERSION=433.0.0
 
 # Python Greater than 3.9 will not work with Google Cloud SDK 
 # https://github.com/googleapis/google-auth-library-python/issues/418
@@ -23,6 +23,7 @@ RUN choco install powershell-core -y --no-progress
 
 # Install python
 RUN choco install -y python3 --version $env:PYTHON_VERSION --no-progress; `
+    Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1; `
     refreshenv
 
 # Install Terraform
@@ -44,4 +45,5 @@ RUN $old = (Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentC
     $new = $old + $gcloudPath; `
     Write-Host $new; `
     Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name path -Value $new; `
+    Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1; `
     refreshenv
