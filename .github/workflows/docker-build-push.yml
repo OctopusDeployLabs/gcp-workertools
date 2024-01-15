@@ -107,7 +107,7 @@ jobs:
     - name: Build the ubuntu.2004 image 
       env:
         VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
-        GOOGLE_CLOUD_CLI_VERSION: ${{ needs.get-version-number.outputs.VERSION }}-0
+        GOOGLE_CLOUD_CLI_VERSION: 0:${{ needs.get-version-number.outputs.VERSION }}-0
       run: docker build ./ubuntu-2004 --build-arg GOOGLE_CLOUD_CLI_VERSION=$GOOGLE_CLOUD_CLI_VERSION --tag octopuslabs/gcp-workertools:$VERSION_NUMBER-ubuntu.2004 --tag octopuslabs/gcp-workertools:latest-ubuntu.2004
       if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
       
@@ -124,7 +124,7 @@ jobs:
     - name: Build the ubuntu.2204 image      
       env:
         VERSION_NUMBER: ${{ needs.get-version-number.outputs.VERSION }}     
-        GOOGLE_CLOUD_CLI_VERSION: ${{ needs.get-version-number.outputs.VERSION }}-0
+        GOOGLE_CLOUD_CLI_VERSION: 0:${{ needs.get-version-number.outputs.VERSION }}-0
       run: docker build ./ubuntu-2204 --build-arg GOOGLE_CLOUD_CLI_VERSION=$GOOGLE_CLOUD_CLI_VERSION --tag octopuslabs/gcp-workertools:$VERSION_NUMBER-ubuntu.2204 --tag octopuslabs/gcp-workertools:latest-ubuntu.2204
       if: ${{ needs.get-version-number.outputs.CONTINUE == 'Yes' }}
       
